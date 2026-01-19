@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = "cicdprac-app"
         DOCKERHUB_USER = "sanchit69"
-        DOCKER_CREDS = credentials('dockerhub-creds')
     }
 
     stages {
@@ -17,37 +16,42 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                bat """
-                echo %DOCKER_CREDS_PSW% | docker login -u %DOCKER_CREDS_USR% --password-stdin
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat """
-                docker build -t %DOCKERHUB_USER%/%IMAGE_NAME%:latest .
-                """
+                sh '''
+                docker build -t sanchit69/cicdprac-app:latest .
+                '''
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                bat """
-                docker push %DOCKERHUB_USER%/%IMAGE_NAME%:latest
-                """
+                sh '''
+                docker push sanchit69/cicdprac-app:latest
+                '''
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning Docker resources...'
-            bat """
-            docker logout
-            docker rmi %DOCKERHUB_USER%/%IMAGE_NAME%:latest || exit 0
-            docker image prune -f
-            """
+            sh '''
+            docker logout || true
+            docker rmi sanchit69/cicdprac-app:latest || true
+            docker image prune -f || true
+            '''
         }
     }
 }
