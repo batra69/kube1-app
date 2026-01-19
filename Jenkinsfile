@@ -1,12 +1,17 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "cicdprac-app"
-        DOCKERHUB_USER = "sanchit69"
-    }
-
     stages {
+
+        stage('Verify Docker PATH') {
+            steps {
+                sh '''
+                echo "PATH=$PATH"
+                which docker || echo "docker not found"
+                docker --version || echo "docker not usable"
+                '''
+            }
+        }
 
         stage('Checkout Code') {
             steps {
@@ -17,7 +22,7 @@ pipeline {
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'creds',
+                    credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
